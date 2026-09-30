@@ -34,3 +34,4 @@ supabase/.branches/
 .idea/
 .DS_Store
 Thumbs.db
+.mcp.json
