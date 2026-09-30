@@ -1,0 +1,17 @@
+# Supabase CLI configuration (used by `supabase start` for local development and
+# `supabase link` / `supabase db push` for the hosted project).
+project_id = "stock_inventory_system"
+
+[auth]
+site_url = "https://mingminghui.github.io/stock_inventory_system/"
+additional_redirect_urls = ["http://localhost:5173/"]
+
+# Google is the only sign-in method.
+[auth.email]
+enable_signup = false
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
