@@ -1,0 +1,36 @@
+# Source workbook and any exports (business data — never commit)
+data/
+*.xlsx
+*.xls
+*.csv
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# Node / Vite
+node_modules/
+dist/
+coverage/
+*.local
+*.tsbuildinfo
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
