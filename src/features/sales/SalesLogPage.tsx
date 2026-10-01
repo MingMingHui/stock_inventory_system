@@ -10,7 +10,7 @@ import { useTableState } from '../../hooks/useTableState';
 import { monthKey, monthLabel, monthRange } from '../../lib/dates';
 import { formatDate, formatPercent, formatQuantity, formatRate } from '../../lib/format';
 import { listCategories } from '../../services/reference';
-import { type SalesFilters, type SalesSort, listSales, voidSale } from '../../services/sales';
+import { type SalesFilters, type SalesSort, listSales, voidSaleItem } from '../../services/sales';
 import type { SalesLogRow } from '../../types/database';
 import { useAuth } from '../auth/AuthProvider';
 import { SaleForm } from './SaleForm';
@@ -42,7 +42,11 @@ export function SalesLogPage() {
         <div className="cell-stack">
           <span>{formatDate(r.sale_date)}</span>
           {r.source === 'excel_import' && <small className="muted">Excel (monthly)</small>}
-          {r.is_void && <Badge tone="muted">void</Badge>}
+          {r.is_void && (
+            <span title={r.void_reason ? `Void: ${r.void_reason}` : undefined}>
+              <Badge tone="muted">void</Badge>
+            </span>
+          )}
         </div>
       ),
     },
@@ -94,15 +98,21 @@ export function SalesLogPage() {
     { key: 'seller', header: 'Recorded by', render: (r) => r.seller },
   ];
   if (isAdmin) {
+    // Every line has its own Void action; it voids that line only (void_sale_item).
     columns.push({
       key: 'actions',
       header: 'Actions',
       render: (r) =>
-        !r.is_void && r.line_no === 1 ? (
-          <button type="button" className="btn btn-small btn-danger-outline" onClick={() => setVoiding(r)}>
+        r.is_void ? null : (
+          <button
+            type="button"
+            className="btn btn-small btn-danger-outline"
+            onClick={() => setVoiding(r)}
+            aria-label={`Void sale line ${r.item_code} ${r.description}, quantity ${r.quantity}`}
+          >
             Void sale
           </button>
-        ) : null,
+        ),
     });
   }
 
@@ -197,13 +207,13 @@ export function SalesLogPage() {
       {voiding && (
         <ConfirmDialog
           title="Void sale"
-          message={`Void the whole sale of ${formatDate(voiding.sale_date)} (${voiding.item_code}${voiding.source === 'app' ? ', stock will be returned' : ''})? The sale stays in the log marked as void.`}
+          message={`Void this sale line only: ${voiding.item_code} ${voiding.description}, quantity ${formatQuantity(voiding.quantity)}, ${formatDate(voiding.sale_date)}${voiding.source === 'app' ? '. Its stock will be returned' : ''}. Other lines of the same sale are not affected. The line stays in the log marked as void.`}
           confirmLabel="Void sale"
           destructive
           reasonLabel="Reason"
           onConfirm={async (reason) => {
-            await voidSale(voiding.sale_id, reason);
-            toast.success('Sale voided.');
+            await voidSaleItem(voiding.id, reason);
+            toast.success('Sale line voided.');
             data.reload();
           }}
           onClose={() => setVoiding(null)}

@@ -7,7 +7,7 @@ const SALES_COLUMNS =
   'id,sale_id,sale_date,source,is_void,seller,notes,line_no,stock_item_id,product_id,item_code,description,brand,' +
   'category_id,category_name,stock_before,quantity,stock_after,agreed_price,actual_price,unit_cost,revenue,' +
   'total_cost,gross_profit,rule_type,partner_a_rate,partner_a_rate_is_leftover,partner_b_rate,partner_a_share,' +
-  'partner_b_share,price_drop_ratio,price_alert,legacy_ref,created_at';
+  'partner_b_share,price_drop_ratio,price_alert,legacy_ref,created_at,void_reason,voided_at,voided_by_label';
 
 export type SalesSort = 'sale_date' | 'item_code' | 'category_name' | 'revenue' | 'gross_profit' | 'created_at';
 
@@ -82,4 +82,12 @@ export function createSale(saleDate: string, lines: SaleLineInput[], notes: stri
 
 export function voidSale(saleId: string, reason: string): Promise<null> {
   return run(supabase.rpc('void_sale', { p_sale_id: saleId, p_reason: reason }), 'Unable to void the sale.');
+}
+
+/** Voids one sale line only (admin). Stock for that line is returned in the same transaction. */
+export function voidSaleItem(saleItemId: string, reason: string): Promise<null> {
+  return run(
+    supabase.rpc('void_sale_item', { p_sale_item_id: saleItemId, p_reason: reason }),
+    'Unable to void the sale line.',
+  );
 }

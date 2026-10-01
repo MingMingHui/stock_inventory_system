@@ -72,6 +72,11 @@ export interface StockItem {
   legacy_ref: string | null;
   created_at: string;
   updated_at: string;
+  /** 'auto-rule obsolete' | 'manual' | null (imported) */
+  obsolete_remarks: string | null;
+  /** 1 = oldest active batch of the product (FIFO: sell/adjust first); null when obsolete */
+  fifo_rank: number | null;
+  active_batch_count: number;
 }
 
 export interface StockAdjustment {
@@ -132,6 +137,9 @@ export interface SalesLogRow {
   price_alert: boolean;
   legacy_ref: string | null;
   created_at: string;
+  void_reason: string | null;
+  voided_at: string | null;
+  voided_by_label: string | null;
 }
 
 export interface SalePreview {
@@ -246,9 +254,76 @@ export interface AuthorizedUser {
 export interface AppSetting {
   key: string;
   value: string;
-  value_type: 'integer' | 'numeric' | 'boolean';
+  value_type: 'integer' | 'numeric' | 'boolean' | 'text';
   description: string;
   updated_at: string;
+}
+
+export interface TelegramLinkCode {
+  code: string;
+  expires_at: string;
+  bot_username: string | null;
+}
+
+export interface MyTelegramLink {
+  telegram_username: string | null;
+  linked_at: string;
+  last_seen_at: string | null;
+  is_active: boolean;
+}
+
+export interface TelegramUserLink {
+  id: string;
+  telegram_user_id: number;
+  telegram_username: string | null;
+  is_active: boolean;
+  linked_at: string;
+  last_seen_at: string | null;
+  authorized_users: { email: string; display_name: string | null } | null;
+}
+
+export type SalesClassification = 'BEST SELLER' | 'NORMAL' | 'LOW SELLER';
+export type SalesPattern = 'GROWING' | 'DECLINING' | 'STABLE' | 'SEASONAL' | 'SPORADIC' | 'NO RECENT SALES';
+
+export interface MonthlyAnalytics {
+  period_month: string;
+  units: number;
+  revenue: number;
+  gross_profit: number;
+  line_count: number;
+  avg_sale_value: number;
+  product_count: number;
+}
+
+export interface CategoryAnalytics {
+  category_id: string;
+  category_name: string;
+  units: number;
+  revenue: number;
+  gross_profit: number;
+  line_count: number;
+  revenue_share: number;
+}
+
+export interface ItemAnalytics {
+  product_id: string;
+  item_code: string;
+  description: string;
+  brand: string | null;
+  category_name: string;
+  units: number;
+  revenue: number;
+  gross_profit: number;
+  avg_selling_price: number | null;
+  line_count: number;
+  months_with_sales: number;
+  months_without_sales: number;
+  units_recent: number;
+  monthly_units: number[];
+  current_stock: number;
+  oldest_stock_date: string | null;
+  classification: SalesClassification;
+  pattern: SalesPattern;
 }
 
 export interface AuditLog {
