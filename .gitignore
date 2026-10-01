@@ -35,3 +35,4 @@ supabase/.branches/
 .DS_Store
 Thumbs.db
 .mcp.json
+Pipfile

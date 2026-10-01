@@ -24,12 +24,23 @@ jobs:
       - name: Build (no Supabase credentials needed to verify the build)
         run: npm run build
 
+  edge-functions:
+    name: Edge Functions — Deno type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      # Bot logic is unit-tested by `npm test`; this checks the Deno entry point.
+      - run: deno check supabase/functions/telegram-webhook/index.ts
+
   database:
-    name: Database — migrations, RLS, calculations
+    name: Database — migrations, RLS, calculations, Telegram, analytics
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17  # same major version as the Supabase project
         env:
           POSTGRES_PASSWORD: postgres
         ports:
