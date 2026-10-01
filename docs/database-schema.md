@@ -10,6 +10,11 @@ PostgreSQL on Supabase. All schema changes are migrations in [`supabase/migratio
 | `…004_settlement` | expense categories, operating expenses, monthly settlements, reporting functions |
 | `…005_security` | RLS on every table, least-privilege and column-level grants |
 | `…006_bootstrap_admin` | first administrator (`kalimotormalihah@gmail.com`) |
+| `…007_foreign_key_indexes` | indexes for four foreign keys flagged by the Supabase advisor |
+| `…008_sale_line_void_and_business_date` | `sale_items.is_void/voided_*/void_reason`, `void_sale_item()`, reports exclude void lines, `private.business_today()` (Asia/Kuala_Lumpur) |
+| `…009_stock_auto_obsolete_and_fifo` | `stock_items.obsolete_remarks`, auto-obsolete trigger, `stock_items_view.fifo_rank/active_batch_count` ([stock-rules.md](stock-rules.md)) |
+| `…010_telegram` | `telegram_user_links`, `telegram_link_codes`, `telegram_sessions`, `telegram_processed_updates`, link-code functions, `tg_*` bot functions, acting-user support ([telegram-integration.md](telegram-integration.md)) |
+| `…011_sales_analytics` | `analytics_monthly`, `analytics_categories`, `analytics_items` ([sales-analytics.md](sales-analytics.md)) |
 
 Conventions:
 - UUID primary keys (the audit log uses an identity column).
@@ -180,6 +185,14 @@ erDiagram
 | `operating_expenses` | Signed monthly adjustment to a partner's payable | amount = bill × ratio when a bill is given (computed by trigger) |
 | `monthly_settlements` | Finalized month snapshot (row present = locked) | one per month |
 | `audit_logs` | Before/after JSON of every change to audited tables | written by triggers only |
+| `telegram_user_links` | Telegram user ID ↔ allow-listed user | Telegram ID unique; one active link per user; admin deactivation blocks relinking |
+| `telegram_link_codes` | One-time link codes (SHA-256 hash only) | expire after 10 minutes; single use |
+| `telegram_sessions` | Bot conversation state and pending confirmation | service role only |
+| `telegram_processed_updates` | Telegram `update_id`s already processed (kept 7 days) | primary key = update ID |
+
+Columns added by the enhancement:
+- `sale_items`: `is_void`, `voided_at`, `voided_by`, `voided_by_label` and `void_reason` (line-level void; `is_void ⇔ voided_at`, and a reason is required).
+- `stock_items`: `obsolete_remarks` (`auto-rule obsolete` / `manual`).
 
 ## Views and functions
 
@@ -195,6 +208,12 @@ erDiagram
 | `partner_summary_by_category`, `settlement_summary`, `dashboard_stats` | functions (invoker) | reporting, filtered and aggregated in the database |
 | `apply_recurring_expenses`, `finalize_settlement`, `reopen_settlement` | SECURITY DEFINER, admin | month-end |
 | `get_my_access` | SECURITY DEFINER | caller's allow-list entry (empty if unauthorized) |
+| `void_sale_item` | SECURITY DEFINER, admin | void one sale line and return only its stock |
+| `analytics_monthly`, `analytics_categories`, `analytics_items` | functions (invoker), admin | sales analytics |
+| `create_telegram_link_code`, `get_my_telegram_link`, `unlink_my_telegram` | SECURITY DEFINER, signed-in users | Telegram linking |
+| `tg_claim_update`, `tg_link_account`, `tg_whoami`, `tg_list_categories`, `tg_list_products`, `tg_list_batches`, `tg_preview_sale`, `tg_execute` | SECURITY DEFINER, **service_role only** | bot operations; act as the linked user, then call the functions above |
+| `private.business_today()` | helper | today in Asia/Kuala_Lumpur |
+| `private.apply_auto_obsolete(product)` | helper (trigger) | auto-obsolete rule |
 
 ## Indexes
 
@@ -210,3 +229,18 @@ Foreign keys and filter columns are indexed:
 - `audit_logs(table_name, record_id)` and `audit_logs(occurred_at)`
 
 All list screens paginate and filter in the database. No materialized views are needed at this data volume.
+
+### Index decisions (October 2026 enhancement)
+
+| Index | Why |
+|---|---|
+| `stock_items(product_id, purchased_date, created_at)` | FIFO ordering and the auto-obsolete rule both scan one product's batches by purchase date |
+| `sale_items(sale_id) WHERE NOT is_void` | reports and analytics read only non-void lines of sales already filtered by `sales(sale_date)` |
+| `telegram_user_links(telegram_user_id)` (unique) + partial unique `(authorized_user_id) WHERE is_active` | every bot update looks up the Telegram ID; one active link per user |
+| `telegram_processed_updates(processed_at)` | cleanup of entries older than 7 days |
+| `telegram_link_codes(code_hash)` (unique), `(authorized_user_id)` | code lookup on /start; revoking a user's previous codes |
+
+Considered and not added:
+- **A standalone index on `sale_items(is_void)`:** a low-cardinality boolean; the partial index above covers the real queries.
+- **An index on `stock_items(is_obsolete)`:** it already exists.
+- **An index for status:** status is computed in the view, not stored.

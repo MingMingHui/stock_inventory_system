@@ -51,8 +51,40 @@ Each item was verified by an automated test in [`python/tests/test_security.py`]
 | Race conditions | Row locks in `create_sale`/`void_sale`; lost-update guard in `adjust_stock`; advisory lock for rule overlap checks. |
 | Error leakage | `lib/errors.ts` shows only our own validation messages; technical details go to the console, never to users. |
 
+## Enhancement review (October 2026): Telegram, line void, analytics
+
+Verified by automated tests in [`python/tests/test_enhancements.py`](../python/tests/test_enhancements.py) (database, as real roles) and [`supabase/functions/telegram-webhook/bot.test.ts`](../supabase/functions/telegram-webhook/bot.test.ts) (bot logic).
+
+### Web
+
+| Check | Result | Evidence |
+|---|---|---|
+| RLS enabled on the 4 new Telegram tables | **Yes.** Sessions, codes and processed updates have no client policies (service role only); links are admin-readable | `010_telegram.sql` |
+| Line void is authorized and transactional | **Yes.** Admin only, line row locked, stock restored exactly once, reason required, `voided_by/voided_at` recorded, original line kept | `test_voiding_line_3_only_affects_line_3`, `test_line_void_cannot_be_repeated_or_done_by_users`, `test_whole_sale_void_does_not_restore_an_already_voided_line_twice` |
+| Analytics restricted to admins | **Yes.** The functions raise for non-admins; the tab is hidden and the page redirects | `test_analytics_admin_only_and_validated` |
+| Financial calculations unchanged | **Yes.** `calculate_sale_line` and `price_drop_check` untouched; all earlier calculation tests still pass | `test_calculations.py` |
+
+### Telegram
+
+| Check | Result | Evidence |
+|---|---|---|
+| Bot token never exposed | Stored only as a Supabase Edge Function secret; never in `VITE_*`, the repository, logs or responses | `index.ts`, `telegram_api.ts`, `.env.example` |
+| Webhook authenticated | `X-Telegram-Bot-Api-Secret-Token` compared in constant time; **503** when secrets are missing (fail closed), **401** on mismatch | `index.ts` |
+| Unauthorized Telegram users rejected | Every update is authorized by `tg_whoami` before anything is shown or saved | `test_unlinked_unknown_and_disabled_telegram_users_are_rejected`; bot test "rejects Telegram users that are not linked" |
+| Telegram ID ↔ allow-listed user mapping | Stable numeric Telegram user ID; random, hashed, single-use 10-minute link codes | `test_link_code_is_random_hashed_single_use`, `test_expired_link_code_is_rejected` |
+| Inactive users / deactivated links rejected; admin block cannot be bypassed | **Yes** | `test_admin_deactivation_cannot_be_bypassed_by_relinking` |
+| Browser cannot use bot functions or the acting-user mechanism | `tg_*` executable by `service_role` only; `app.acting_email` honoured only for service-role JWTs with no user | `test_browser_roles_cannot_call_bot_functions`, `test_browser_user_cannot_impersonate_via_acting_email` |
+| Service role cannot write without a linked user | `create_sale` and the others still require an authorized identity | `test_service_role_without_a_linked_user_cannot_write` |
+| Callback data cannot select unauthorized records | Buttons carry a nonce + an index into server-side options; the database re-validates every write | bot test "ignores forged button indexes and old nonces" |
+| Duplicate updates / double taps do not duplicate sales | `tg_claim_update` + nonce consumed atomically with the write (`already_done`) | `test_bot_sale_is_atomic_idempotent_and_attributed`, `test_duplicate_update_is_claimed_once` |
+| No overselling between web and Telegram | Both use `create_sale` (row locks, re-check at commit) | `test_concurrent_sales_do_not_lose_updates`, `test_bot_sale_rechecks_stock_and_keeps_session_on_failure` |
+| Group chats | Refused, so no financial data is posted to groups | bot test "only works in private chats" |
+| Telegram actions attributable | Actor label `<email> (Telegram)` on sales, history and audit rows | `test_bot_sale_is_atomic_idempotent_and_attributed` |
+
 ## Residual risks and recommendations
 
 - **Anon key:** public by design. Supabase rate limits apply; consider enabling CAPTCHA or Attack Protection in the Supabase dashboard.
 - **Backups:** Free-tier projects pause after inactivity and have limited backups. Export periodically: `pg_dump` with `DATABASE_URL`.
 - **Admin accounts:** protect them with Google 2-Step Verification.
+- **Telegram accounts:** anyone holding a linked user's phone or Telegram session can use the bot as that user. Recommend Telegram two-step verification. Admins can deactivate a link instantly (Admin → Telegram).
+- **Webhook secret rotation:** to rotate, set a new `TELEGRAM_WEBHOOK_SECRET`, then re-run `telegram_setup.py webhook`.

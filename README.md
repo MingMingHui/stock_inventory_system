@@ -1,18 +1,25 @@
-# Workshop Stock & Sales
+﻿# Workshop Stock & Sales
 
 A web application for KaLi Motor's workshop. It covers:
 - stock and shared equipment
 - sales, with price-drop alerts
 - partner revenue sharing between KaLi Motor (Partner A) and Amin (Partner B)
 - monthly settlement, including wages, electricity and rental
+- FIFO stock batches with an automatic obsolete rule
+- a Telegram bot for stock and sales
+- sales analytics
 
 It replaces `Workshop_Stocklist_2026.xlsx`: the workbook seeds the database once, and from then on the database is the source of truth.
 
 - **Frontend:** React 19 + TypeScript + Vite, hosted on GitHub Pages
-- **Backend:** Supabase (PostgreSQL, Row Level Security, SQL functions, Google OAuth), Free Tier
-- **Tooling:** Python (Excel import, validation, user management), GitHub Actions (CI/CD)
+- **Backend:** Supabase (PostgreSQL, Row Level Security, SQL functions, Google OAuth, one Edge Function for Telegram), Free Tier
+- **Tooling:** Python (Excel import, validation, user management, Telegram setup), GitHub Actions (CI/CD)
 
-Tabs: **Partner Rule Table · Kali Inventory List · Stock Master · Sales Log · Partner Summary**, plus an **Admin** area for administrators.
+Tabs:
+- **Partner Rule Table Â· Kali Inventory List Â· Stock Master Â· Sales Log Â· Partner Summary**
+- **Sales Analytics** (admins only)
+- an **Admin** area
+- a **Telegram** button for linking the bot
 
 ## Documentation
 
@@ -27,6 +34,10 @@ Tabs: **Partner Rule Table · Kali Inventory List · Stock Master · Sales Log �
 | User management | [docs/user-management.md](docs/user-management.md) |
 | Security review | [docs/security.md](docs/security.md) |
 | Deployment | [docs/deployment.md](docs/deployment.md) |
+| Stock rules (FIFO, auto-obsolete) | [docs/stock-rules.md](docs/stock-rules.md) |
+| Telegram bot (setup, linking, commands, security) | [docs/telegram-integration.md](docs/telegram-integration.md) |
+| Sales analytics (methodology) | [docs/sales-analytics.md](docs/sales-analytics.md) |
+| October 2026 enhancement analysis | [docs/enhancement-analysis.md](docs/enhancement-analysis.md) |
 
 ## Prerequisites
 
@@ -34,7 +45,8 @@ Tabs: **Partner Rule Table · Kali Inventory List · Stock Master · Sales Log �
 - Python 3.12+
 - A Supabase project (free tier)
 - A Google Cloud OAuth client
-- Optional: Docker, or any PostgreSQL 16 server, for the database tests
+- Optional: Docker, or any PostgreSQL 17 server, for the database tests
+- Optional: a Telegram bot from @BotFather and the Supabase CLI (or MCP) to deploy the Edge Function
 
 ## Local setup
 
@@ -56,7 +68,7 @@ Add `http://localhost:5173/` to the Supabase redirect URLs.
    ```bash
    cd python && python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
    pip install -r requirements.txt
-   export DATABASE_URL='postgresql://…'                       # never commit this
+   export DATABASE_URL='postgresql://â€¦'                       # never commit this
    python scripts/import_excel.py --dry-run
    python scripts/import_excel.py
    python scripts/validate_import.py
@@ -88,13 +100,13 @@ pytest -q            # migrations, RLS, calculations, stock/sales, Excel import 
 Local database for tests:
 
 ```bash
-docker run -d --name wssms-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16
+docker run -d --name wssms-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17
 export TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
 ```
 
 ## User management
 
-Use **Admin → Users** in the app, or:
+Use **Admin â†’ Users** in the app, or:
 
 ```bash
 python scripts/manage_users.py add user@example.com user

@@ -114,16 +114,22 @@ alert      = actual price ≤ agreed price × (1 − threshold)       threshold 
   Each change writes an immutable `stock_adjustments` row with previous quantity, new quantity, change, reason, user and time.
 - **Lost updates:** an adjustment carries the quantity the user saw. If it changed meanwhile, the database refuses the adjustment and asks the user to refresh. Concurrent sales lock the stock row, so `10 − 3 − 4` always gives 3.
 - **Obsolete** is a flag, never a deletion. Obsolete items cannot be sold, and their history and sales remain.
+- **FIFO and automatic obsolete:**
+  - Batches of the same item are used earliest purchase first.
+  - An older batch that reaches 0 while a newer batch exists is retired automatically (`auto-rule obsolete`).
+  - See [stock-rules.md](stock-rules.md).
 
 ## 6. Sales
 
 - Sales are recorded per transaction: one sale can have one or more lines. The imported August log is stored as one monthly aggregate sale (`source = excel_import`).
-- The client sends only stock item, quantity and actual price. Agreed price, cost, rule and rates are read by the database.
-- A sale cannot be dated in the future or fall in a finalized month.
+- The client sends only stock item, quantity and actual price. Agreed price, cost, rule and rates are read by the database. This holds for the web app and the Telegram bot alike, which use the same functions.
+- A sale cannot be dated in the future or fall in a finalized month. "Today" is the **Malaysian** date (`Asia/Kuala_Lumpur`), even though the database server runs in UTC.
 - Sales are never edited or deleted.
-  - An admin can **void** a sale with a reason. Voided sales stay visible, crossed out, and are excluded from totals.
-  - Voiding an app-entered sale returns its stock.
-  - Voiding the imported August log does not change stock, because its sales were never deducted from Stock_Master quantities.
+  - An admin can **void each sale line individually**, with a reason. Before October 2026 only whole sales could be voided.
+  - Voided lines stay visible, crossed out, keep who and when, and are excluded from all totals and analytics.
+  - Voiding an app-entered line returns **that line's** stock to its own batch.
+  - Voiding a line of the imported August log does not change stock, because its sales were never deducted from Stock_Master quantities.
+  - Voiding a whole sale (`void_sale`) skips lines that were already voided, so stock is never returned twice.
 
 ## 7. Monthly settlement
 
