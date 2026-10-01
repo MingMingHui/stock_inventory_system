@@ -111,6 +111,19 @@ def acting_as(conn: psycopg.Connection, user_id: uuid.UUID | None):
 
 
 @contextmanager
+def acting_as_service(conn: psycopg.Connection):
+    """Run statements the way the Telegram Edge Function does: role service_role, no user."""
+    conn.execute(sql.SQL("set local role {}").format(sql.Identifier("service_role")))
+    conn.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"role": "service_role"}),))
+    try:
+        yield conn
+    finally:
+        conn.execute("reset role")
+        conn.execute("select set_config('request.jwt.claims', '', true)")
+        conn.execute("select set_config('app.acting_email', '', true)")
+
+
+@contextmanager
 def fails(conn: psycopg.Connection, exc: type[Exception] = psycopg.Error, match: str | None = None):
     """Expect the enclosed statement to fail; keeps the surrounding transaction usable."""
     conn.execute("savepoint expect_failure")

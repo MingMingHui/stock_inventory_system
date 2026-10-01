@@ -44,6 +44,9 @@ const battery: StockItem = {
   legacy_ref: null,
   created_at: '',
   updated_at: '',
+  obsolete_remarks: null,
+  fifo_rank: 1,
+  active_batch_count: 1,
 };
 
 function authState(state: ReturnType<typeof useAuth>['state']) {
