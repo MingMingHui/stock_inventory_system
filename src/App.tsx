@@ -14,6 +14,9 @@ const PartnerSummaryPage = lazy(() =>
   import('./features/reports/PartnerSummaryPage').then((m) => ({ default: m.PartnerSummaryPage })),
 );
 const AdminPage = lazy(() => import('./features/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
+const SalesAnalyticsPage = lazy(() =>
+  import('./features/analytics/SalesAnalyticsPage').then((m) => ({ default: m.SalesAnalyticsPage })),
+);
 
 const loading = <p role="status">Loading…</p>;
 
@@ -34,6 +37,7 @@ export function App() {
                   <Route path="stock" element={<StockMasterPage />} />
                   <Route path="sales" element={<SalesLogPage />} />
                   <Route path="partner-summary" element={<PartnerSummaryPage />} />
+                  <Route path="sales-analytics" element={<SalesAnalyticsPage />} />
                   <Route path="admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/stock" replace />} />
                 </Route>
