@@ -33,10 +33,9 @@ jobs:
         with:
           deno-version: v2.x
       # Bot logic is unit-tested by `npm test`; this checks the Deno entry point.
-      # --node-modules-dir=none: resolve npm/jsr packages from Deno's cache (as the
-      # Supabase runtime does) instead of the repo's npm node_modules, which this
-      # job does not install.
-      - run: deno check --node-modules-dir=none supabase/functions/telegram-webhook/index.ts
+      # The function's own deno.json isolates it from the web app's package.json
+      # and tsconfig files (otherwise Deno tries to resolve web-only npm packages).
+      - run: deno check --config supabase/functions/telegram-webhook/deno.json supabase/functions/telegram-webhook/index.ts
 
   database:
     name: Database — migrations, RLS, calculations, Telegram, analytics
