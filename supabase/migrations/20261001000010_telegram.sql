@@ -137,6 +137,10 @@ alter table public.telegram_link_codes        enable row level security;
 alter table public.telegram_sessions          enable row level security;
 alter table public.telegram_processed_updates enable row level security;
 
+-- Supabase grants new public tables to anon/authenticated by default; start from zero.
+revoke all on public.telegram_user_links, public.telegram_link_codes, public.telegram_sessions,
+              public.telegram_processed_updates from anon, authenticated;
+
 -- Admins can see and deactivate links; everything else is service-role only.
 grant select, update (is_active) on public.telegram_user_links to authenticated;
 create policy telegram_user_links_admin_select on public.telegram_user_links
