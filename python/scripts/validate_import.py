@@ -70,16 +70,27 @@ def check_rules(cur, wb: Workbook, out: list[Finding]) -> int:
     return len(wb.rules)
 
 
+AUTO_OBSOLETE = "auto-rule obsolete"
+
+
 def check_stock(cur, wb: Workbook, out: list[Finding]) -> int:
-    cur.execute("select legacy_ref, quantity, unit_cost, agreed_price, is_obsolete from public.stock_items")
+    cur.execute("select legacy_ref, quantity, unit_cost, agreed_price, is_obsolete, obsolete_remarks "
+                "from public.stock_items")
     db = {row[0]: row[1:] for row in cur.fetchall() if row[0]}
     for row in wb.stock:
         got = db.get(row.ref)
         expected = (row.quantity, row.unit_cost, row.agreed_price, row.is_obsolete)
         if got is None:
             out.append(Finding("DISCREPANCY", row.ref, "stock row missing in database"))
-        elif tuple(got) != expected:
-            out.append(Finding("DISCREPANCY", row.ref, f"Excel {expected} vs database {tuple(got)} "
+            continue
+        actual, remarks = tuple(got[:4]), got[4]
+        if actual == expected:
+            continue
+        if actual[:3] == expected[:3] and actual[3] and not expected[3] and remarks == AUTO_OBSOLETE:
+            # Database rule (docs/stock-rules.md): an older empty batch with a newer batch is obsolete.
+            out.append(Finding("KNOWN", row.ref, "retired by the auto-obsolete rule (Excel still shows it active)"))
+        else:
+            out.append(Finding("DISCREPANCY", row.ref, f"Excel {expected} vs database {actual} "
                                                        "(qty, cost, price, obsolete)"))
     return len(wb.stock)
 

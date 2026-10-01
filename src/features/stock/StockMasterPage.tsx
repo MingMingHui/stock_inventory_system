@@ -76,10 +76,33 @@ export function StockMasterPage() {
           </span>
         ),
     },
-    { key: 'status', header: 'Status', sortKey: 'status', render: (r) => <StockStatusBadge status={r.status} /> },
+    {
+      key: 'status',
+      header: 'Status',
+      sortKey: 'status',
+      render: (r) => (
+        <div className="cell-stack">
+          <StockStatusBadge status={r.status} />
+          {r.is_obsolete && r.obsolete_remarks && <small className="muted">{r.obsolete_remarks}</small>}
+        </div>
+      ),
+    },
     { key: 'cost', header: 'Cost', align: 'right', render: (r) => <Money value={r.unit_cost} /> },
     { key: 'price', header: 'Agreed price', sortKey: 'agreed_price', align: 'right', render: (r) => <Money value={r.agreed_price} /> },
-    { key: 'purchased', header: 'Purchased', render: (r) => formatDate(r.purchased_date) },
+    {
+      key: 'purchased',
+      header: 'Purchased',
+      render: (r) => (
+        <div className="cell-stack">
+          <span>{formatDate(r.purchased_date)}</span>
+          {r.fifo_rank !== null && r.active_batch_count > 1 && (
+            <small className={r.fifo_rank === 1 ? 'fifo-first' : 'muted'} title="FIFO: earliest purchase is used first">
+              {r.fifo_rank === 1 ? 'FIFO: use first' : `FIFO ${r.fifo_rank} of ${r.active_batch_count}`}
+            </small>
+          )}
+        </div>
+      ),
+    },
     {
       key: 'actions',
       header: 'Actions',
@@ -119,7 +142,7 @@ export function StockMasterPage() {
     <section>
       <PageHeader
         title="Stock Master"
-        description="Stock on hand by purchase batch. Every quantity change is recorded with a reason and the user who made it."
+        description="Stock on hand by purchase batch, earliest purchase first (FIFO). Every quantity change is recorded with a reason and the user who made it. An older batch that reaches zero while a newer batch exists is retired automatically (auto-rule obsolete)."
         actions={
           <button type="button" className="btn btn-primary" onClick={() => setDialog({ kind: 'add' })}>
             Add stock

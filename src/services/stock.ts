@@ -6,7 +6,7 @@ import { type Page, type PageRequest, nullIfBlank, pageBounds, run, runPage } fr
 export const STOCK_COLUMNS =
   'id,product_id,item_code,description,brand,unit,is_non_stock,category_id,category_name,purchased_date,' +
   'unit_cost,agreed_price,quantity,min_quantity,effective_min_quantity,status,is_obsolete,obsolete_at,' +
-  'last_checked_at,notes,legacy_ref,created_at,updated_at';
+  'last_checked_at,notes,legacy_ref,created_at,updated_at,obsolete_remarks,fifo_rank,active_batch_count';
 
 export type StockSort = 'item_code' | 'description' | 'category_name' | 'quantity' | 'agreed_price' | 'status' | 'updated_at';
 
@@ -26,17 +26,30 @@ export function listStock(filters: StockFilters, req: PageRequest<StockSort>): P
   else if (!filters.includeObsolete) query = query.eq('is_obsolete', false);
   if (filters.categoryId) query = query.eq('category_id', filters.categoryId);
   return runPage(
-    query.order(req.sort.column, { ascending: req.sort.ascending }).order('id').range(from, to),
+    query
+      .order(req.sort.column, { ascending: req.sort.ascending })
+      // Duplicated items: earliest purchase first (FIFO), undated batches last.
+      .order('purchased_date', { ascending: true, nullsFirst: false })
+      .order('id')
+      .range(from, to),
     'Unable to load stock.',
   );
 }
 
-/** Sellable stock for the sale form (server-side search, small result set). */
+/** Sellable stock for the sale form (server-side search, small result set), FIFO within each item. */
 export function searchSellableStock(term: string): Promise<StockItem[]> {
   let query = supabase.from('stock_items_view').select(STOCK_COLUMNS).eq('is_obsolete', false);
   const or = ilikeAny(['item_code', 'description', 'brand', 'category_name'], term);
   if (or) query = query.or(or);
-  return run(query.order('item_code').order('description').limit(20), 'Unable to search stock.');
+  return run(
+    query
+      .order('item_code')
+      .order('description')
+      .order('brand', { nullsFirst: true })
+      .order('fifo_rank', { ascending: true })
+      .limit(20),
+    'Unable to search stock.',
+  );
 }
 
 export interface NewStockInput {

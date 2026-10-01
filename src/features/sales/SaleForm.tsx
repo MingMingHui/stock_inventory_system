@@ -5,7 +5,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useLoader } from '../../hooks/useLoader';
 import { today } from '../../lib/dates';
 import { toUserMessage } from '../../lib/errors';
-import { describeRule, formatMoney, formatQuantity, priceAlertMessage } from '../../lib/format';
+import { describeRule, formatDate, formatMoney, formatQuantity, priceAlertMessage } from '../../lib/format';
 import { isMoney, isWholeNumber, parseNumber } from '../../lib/numbers';
 import { createSale, previewSaleLine } from '../../services/sales';
 import { searchSellableStock } from '../../services/stock';
@@ -176,6 +176,8 @@ function LineEditor({ saleDate, onAdd }: { saleDate: string; onAdd: (line: Line)
                     <strong>{s.item_code}</strong> {s.description}
                     {s.brand ? ` · ${s.brand}` : ''} · {s.category_name} · {formatMoney(s.agreed_price)} ·{' '}
                     {s.is_non_stock ? 'service' : `${s.quantity} in stock`}
+                    {!s.is_non_stock && ` · bought ${formatDate(s.purchased_date)}`}
+                    {s.fifo_rank === 1 && s.active_batch_count > 1 && <span className="fifo-first"> · oldest batch — sell first</span>}
                   </button>
                 </li>
               ))}
