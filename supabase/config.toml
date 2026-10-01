@@ -15,3 +15,9 @@ enabled = true
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
 skip_nonce_check = false
+
+# Telegram calls this function directly and cannot send a Supabase JWT. Requests
+# are authenticated by the X-Telegram-Bot-Api-Secret-Token header instead
+# (TELEGRAM_WEBHOOK_SECRET); the function fails closed when secrets are missing.
+[functions.telegram-webhook]
+verify_jwt = false

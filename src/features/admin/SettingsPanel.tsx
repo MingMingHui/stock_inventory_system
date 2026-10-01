@@ -10,6 +10,7 @@ const LABELS: Record<string, string> = {
   low_stock_default_threshold: 'Default low-stock threshold (units)',
   price_drop_alert_threshold: 'Price alert threshold (0.10 = 10% below agreed price)',
   allow_negative_stock: 'Allow negative stock',
+  telegram_bot_username: 'Telegram bot username (without @)',
 };
 
 export function SettingsPanel() {
@@ -58,7 +59,13 @@ function SettingRow({ setting, onSaved }: { setting: AppSetting; onSaved: () => 
           <option value="true">Yes</option>
         </select>
       ) : (
-        <input id={id} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} />
+        <input
+          id={id}
+          inputMode={setting.value_type === 'text' ? 'text' : 'decimal'}
+          maxLength={setting.value_type === 'text' ? 200 : 30}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
       )}
       <button type="button" className="btn btn-primary btn-small" onClick={save} disabled={busy || value === setting.value}>
         Save

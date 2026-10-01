@@ -1,11 +1,14 @@
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthProvider';
+import { TelegramLinkDialog } from '../features/telegram/TelegramLinkDialog';
 import { PRIMARY_TABS } from '../lib/navigation';
 
 export function Layout() {
   const { state, isAdmin, signOut } = useAuth();
   const access = state.status === 'ready' ? state.access : null;
+  const [telegramOpen, setTelegramOpen] = useState(false);
+  const tabs = PRIMARY_TABS.filter((tab) => !tab.adminOnly || isAdmin);
 
   return (
     <div className="app">
@@ -20,6 +23,9 @@ export function Layout() {
               Admin
             </NavLink>
           )}
+          <button type="button" className="btn btn-small" onClick={() => setTelegramOpen(true)}>
+            Telegram
+          </button>
           {access && (
             <span className="user-identity" title={access.email}>
               {access.display_name ?? access.email}
@@ -32,7 +38,7 @@ export function Layout() {
         </div>
       </header>
       <nav className="tabs" aria-label="Main">
-        {PRIMARY_TABS.map((tab) => (
+        {tabs.map((tab) => (
           <NavLink key={tab.to} to={tab.to} className={({ isActive }) => `tab${isActive ? ' tab-active' : ''}`}>
             {tab.label}
           </NavLink>
@@ -43,6 +49,7 @@ export function Layout() {
           <Outlet />
         </Suspense>
       </main>
+      {telegramOpen && <TelegramLinkDialog onClose={() => setTelegramOpen(false)} />}
     </div>
   );
 }

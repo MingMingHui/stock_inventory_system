@@ -6,6 +6,7 @@ import { AuditLogPanel } from './AuditLogPanel';
 import { ExpenseCategoriesPanel } from './ExpenseCategoriesPanel';
 import { PriceAlertsPanel } from './PriceAlertsPanel';
 import { SettingsPanel } from './SettingsPanel';
+import { TelegramLinksPanel } from './TelegramLinksPanel';
 import { UsersPanel } from './UsersPanel';
 
 const SECTIONS = [
@@ -13,6 +14,7 @@ const SECTIONS = [
   { id: 'alerts', label: 'Price alerts' },
   { id: 'settings', label: 'Settings' },
   { id: 'expenses', label: 'Expense items' },
+  { id: 'telegram', label: 'Telegram' },
   { id: 'audit', label: 'Audit log' },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]['id'];
@@ -45,6 +47,7 @@ export function AdminPage() {
         {section === 'alerts' && <PriceAlertsPanel />}
         {section === 'settings' && <SettingsPanel />}
         {section === 'expenses' && <ExpenseCategoriesPanel />}
+        {section === 'telegram' && <TelegramLinksPanel />}
         {section === 'audit' && <AuditLogPanel />}
       </div>
     </section>

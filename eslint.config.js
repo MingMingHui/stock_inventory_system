@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'python', 'supabase', 'coverage'] },
+  { ignores: ['dist', 'node_modules', 'python', 'supabase/migrations', 'supabase/tests', 'coverage'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.strict],
     files: ['**/*.{ts,tsx}'],
@@ -24,5 +24,10 @@ export default tseslint.config(
       'no-alert': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
+  },
+  {
+    // Supabase Edge Functions run on Deno.
+    files: ['supabase/functions/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser, Deno: 'readonly' } },
   },
 );
