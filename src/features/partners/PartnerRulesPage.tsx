@@ -14,6 +14,8 @@ import { deleteRule, listRules, saveRule } from '../../services/rules';
 import { RULE_TYPES, type PartnerRule, type ProductCategory, type RuleType } from '../../types/database';
 import { RULE_TYPE_HELP } from '../../lib/ruleTypes';
 import { useAuth } from '../auth/AuthProvider';
+import { ExportButtons } from '../export/ExportButtons';
+import { partnerRuleSheet } from '../export/exportMappings';
 
 function isCurrent(rule: PartnerRule, on: string): boolean {
   return rule.is_active && rule.effective_from <= on && (rule.effective_to === null || rule.effective_to >= on);
@@ -91,11 +93,20 @@ export function PartnerRulesPage() {
         title="Partner Rule Table"
         description="How each product category's revenue is split between Partner A (KaLi Motor) and Partner B (Amin). Every sale stores the rule and rates it used."
         actions={
-          isAdmin && (
-            <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
-              Add rule
-            </button>
-          )
+          <>
+            <ExportButtons
+              sheet="Partner_Rule_Table"
+              loadSheet={async () => {
+                if (!rules.data) throw new Error('Partner rules are not loaded');
+                return partnerRuleSheet(rows);
+              }}
+            />
+            {isAdmin && (
+              <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
+                Add rule
+              </button>
+            )}
+          </>
         }
       />
       <details className="help">

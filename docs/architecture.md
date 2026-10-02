@@ -32,6 +32,7 @@ src/
     sales/                Sales Log, sale form (live DB preview)
     reports/              Partner Summary, expenses panel
     admin/                users, price alerts, settings, expense items, audit log
+    export/               Excel export (original workbook layout, static values only)
   hooks/                  useLoader (race-free loading), useDebouncedValue, useTableState
   lib/                    supabase client, errors, format, dates, numbers, search, navigation
   services/               one module per domain; all Supabase calls live here

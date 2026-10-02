@@ -17,6 +17,8 @@ import {
 } from '../../services/summary';
 import type { CategorySummary, SettlementSummary } from '../../types/database';
 import { useAuth } from '../auth/AuthProvider';
+import { ExportButtons } from '../export/ExportButtons';
+import { loadPartnerSummarySheet } from '../export/exportData';
 import { ExpensesPanel } from './ExpensesPanel';
 
 type Mode = 'month' | 'range';
@@ -101,6 +103,19 @@ export function PartnerSummaryPage() {
       <PageHeader
         title="Partner Summary"
         description={`Revenue split and monthly settlement. Payable to ${aName} = ${aName}'s share + its adjustments (rental, electricity, wages).`}
+        actions={
+          <ExportButtons
+            sheet="Partner_Summary"
+            period={validRange ? { from, to } : undefined}
+            loadSheet={() => {
+              if (!validRange) return Promise.reject(new Error('Invalid date range'));
+              const category = categories.data?.find((c) => c.id === categoryId)?.name ?? 'All categories';
+              const product = products.data?.find((p) => p.id === productId);
+              const filterLabel = `${category}, ${product ? `${product.item_code} — ${product.description}` : 'all products'}`;
+              return loadPartnerSummarySheet({ from, to, categoryId, productId, filterLabel });
+            }}
+          />
+        }
       />
       <div className="toolbar">
         <SelectField label="Period" value={mode} onChange={(e) => setMode(e.target.value as Mode)}>

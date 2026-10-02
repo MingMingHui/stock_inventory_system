@@ -13,6 +13,8 @@ import { listCategories } from '../../services/reference';
 import { type SalesFilters, type SalesSort, listSales, voidSaleItem } from '../../services/sales';
 import type { SalesLogRow } from '../../types/database';
 import { useAuth } from '../auth/AuthProvider';
+import { ExportButtons } from '../export/ExportButtons';
+import { loadSalesSheet } from '../export/exportData';
 import { SaleForm } from './SaleForm';
 
 export function SalesLogPage() {
@@ -122,9 +124,12 @@ export function SalesLogPage() {
         title="Sales Log"
         description="Each sale records the agreed and actual price, the partner rule and rates in force, and the resulting shares."
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setRecording(true)}>
-            Record sale
-          </button>
+          <>
+            <ExportButtons sheet="Sales_Log" loadSheet={() => loadSalesSheet(filters, table.sort)} period={range} />
+            <button type="button" className="btn btn-primary" onClick={() => setRecording(true)}>
+              Record sale
+            </button>
+          </>
         }
       />
       <div className="toolbar">

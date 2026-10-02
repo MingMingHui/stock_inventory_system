@@ -37,6 +37,7 @@ Tabs:
 | Stock rules (FIFO, auto-obsolete) | [docs/stock-rules.md](docs/stock-rules.md) |
 | Telegram bot (setup, linking, commands, security) | [docs/telegram-integration.md](docs/telegram-integration.md) |
 | Sales analytics (methodology) | [docs/sales-analytics.md](docs/sales-analytics.md) |
+| Excel export (sheets, column mapping, filters) | [docs/excel-export.md](docs/excel-export.md) |
 | October 2026 enhancement analysis | [docs/enhancement-analysis.md](docs/enhancement-analysis.md) |
 
 ## Prerequisites

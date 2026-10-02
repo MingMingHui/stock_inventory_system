@@ -14,6 +14,8 @@ import { isWholeNumber, parseNumber } from '../../lib/numbers';
 import { type InventorySort, deleteInventoryItem, listInventory, saveInventoryItem } from '../../services/inventory';
 import { INVENTORY_STATUSES, type InventoryItem, type InventoryStatus } from '../../types/database';
 import { useAuth } from '../auth/AuthProvider';
+import { ExportButtons } from '../export/ExportButtons';
+import { loadInventorySheet } from '../export/exportData';
 
 export function InventoryPage() {
   const { isAdmin } = useAuth();
@@ -56,13 +58,16 @@ export function InventoryPage() {
         title="Kali Inventory List"
         description="Machinery and equipment shared in the workshop (not for sale)."
         actions={
-          isAdmin ? (
-            <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
-              Add item
-            </button>
-          ) : (
-            <span className="read-only-note">Read only — administrators maintain this list.</span>
-          )
+          <>
+            <ExportButtons sheet="Inventory_List" loadSheet={() => loadInventorySheet(term, table.sort)} />
+            {isAdmin ? (
+              <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
+                Add item
+              </button>
+            ) : (
+              <span className="read-only-note">Read only — administrators maintain this list.</span>
+            )}
+          </>
         }
       />
       <div className="toolbar">

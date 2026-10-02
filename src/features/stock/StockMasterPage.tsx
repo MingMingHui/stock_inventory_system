@@ -12,6 +12,8 @@ import { listCategories } from '../../services/reference';
 import { type StockFilters, type StockSort, listStock, setObsolete } from '../../services/stock';
 import { STOCK_STATUSES, type StockItem, type StockStatus } from '../../types/database';
 import { useAuth } from '../auth/AuthProvider';
+import { ExportButtons } from '../export/ExportButtons';
+import { loadStockSheet } from '../export/exportData';
 import { AddStockForm, AdjustStockForm, MinQuantityForm, StockDetailsForm } from './StockForms';
 import { StockHistory } from './StockHistory';
 
@@ -144,9 +146,12 @@ export function StockMasterPage() {
         title="Stock Master"
         description="Stock on hand by purchase batch, earliest purchase first (FIFO). Every quantity change is recorded with a reason and the user who made it. An older batch that reaches zero while a newer batch exists is retired automatically (auto-rule obsolete)."
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setDialog({ kind: 'add' })}>
-            Add stock
-          </button>
+          <>
+            <ExportButtons sheet="Stock_Master" loadSheet={() => loadStockSheet(filters, table.sort)} />
+            <button type="button" className="btn btn-primary" onClick={() => setDialog({ kind: 'add' })}>
+              Add stock
+            </button>
+          </>
         }
       />
       <div className="toolbar">
