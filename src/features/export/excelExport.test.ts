@@ -207,7 +207,8 @@ describe('export mapping matches the original workbook', () => {
     try {
       await workbook.xlsx.readFile('data/Workshop_Stocklist_2026.xlsx'); // read only; never written
     } catch (error) {
-      if ((error as { code?: string }).code === 'ENOENT') return ctx.skip();
+      // exceljs checks existence itself and throws "File not found: <path>".
+      if (error instanceof Error && error.message.startsWith('File not found')) return ctx.skip();
       throw error;
     }
     const read = (sheet: string, row: number, from: number, count: number) =>
